@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Driver\Auth\XxGuard;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Auth;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -24,7 +26,9 @@ class AuthServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerPolicies();
-
         //
+        Auth::extend('xxauth', function ($app, $name, array $config) {
+            return new XxGuard($app, $name, Auth::createUserProvider($config['provider']), $config);
+        });
     }
 }

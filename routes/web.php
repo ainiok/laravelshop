@@ -11,4 +11,6 @@
 |
 */
 
-Route::get('/', 'Pchome\LoginController@index');
+Route::group([],function(){
+   route::get('/','Pchome\IndexController@index');
+});
