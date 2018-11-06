@@ -11,6 +11,22 @@
 |
 */
 
-Route::group([],function(){
-   route::get('/','Pchome\IndexController@index');
+Route::group([], function () {
+    Route::get('/', 'Pchome\IndexController@index');
+});
+
+Route::group(['namespace' => 'Pchome'], function () {
+    Route::get('login', 'LoginController@index')->name('login');
+});
+
+Route::group(['namespace' => 'Admin', 'prefix' => 'admin'], function () {
+    Route::get('login', 'AuthController@showLoginForm');
+    Route::post('login', 'AuthController@login')->name('admin.login');
+    Route::post('logout', 'AuthController@logout')->name('admin.logout');
+
+    Route::group(['middleware' => 'auth:admin'], function () {
+        Route::get('/', 'AdminController@index')->name('admin');
+        Route::get('/dashboard', 'AdminController@dashboard')->name('admin.dashboard');
+        Route::get('/console', 'AdminController@console')->name('admin.console');
+    });
 });
