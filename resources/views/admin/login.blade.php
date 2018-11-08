@@ -26,6 +26,7 @@
             <p>layui 官方出品的单页面后台管理模板系统</p>
         </div>
         <div class="layadmin-user-login-box layadmin-user-login-body layui-form">
+            {{csrf_field()}}
             <div class="layui-form-item">
                 <label class="layadmin-user-login-icon layui-icon layui-icon-username"
                        for="LAY-user-login-username"></label>
@@ -58,7 +59,7 @@
                 <a href="#" class="layadmin-user-jump-change layadmin-link" style="margin-top: 7px;">忘记密码？</a>
             </div>
             <div class="layui-form-item">
-                <button type="submit" class="layui-btn layui-btn-fluid" lay-submit lay-filter="">登 入</button>
+                <button class="layui-btn layui-btn-fluid" lay-submit lay-filter="admin-login">登 入</button>
             </div>
         </div>
     </div>
@@ -78,21 +79,25 @@
 <script>
     layui.config({
         base: '/static/admin/layuiadmin/' //静态资源所在路径
-    }).use(['layer'], function () {
-        var layer = layui.layer;
+    }).extend({
+        index: 'lib/index'
+    }).use(['index', 'form'], function () {
+        var $ = layui.$
+            , setter = layui.setter
+            , admin = layui.admin
+            , form = layui.form;
 
-        //表单提示信息
-        @if(count($errors)>0)
-        @foreach($errors->all() as $error)
-        layer.msg("{{$error}}", {icon: 5});
-        @break
-        @endforeach
-        @endif
-
-        //正确提示
-        @if(session('success'))
-        layer.msg("{{session('success')}}", {icon: 6});
-        @endif
+        form.on('submit(admin-login)', function (obj) {
+            admin.req({
+                url: '{{route('admin.login')}}'
+                , method: 'POST'
+                , data: obj.field
+                , done: function (res) {
+                    //
+                    console.log(res);
+                }
+            });
+        })
     })
 </script>
 </body>
