@@ -53,6 +53,10 @@ class AuthController extends Controller
     protected function handleUserAuthenticateFailed(Request $request)
     {
         // 判断账号是否被禁用
+        if ($admin = $this->guard()->getLastAttempted()) {
+            dd($admin->toArray());
+        }
+
 
     }
 
@@ -102,6 +106,19 @@ class AuthController extends Controller
         $params = $request->only('name', 'password');
         $params[$this->loginUserType] = $params['name'];
         return array_except($params, ['name']);
+    }
+
+    /**
+     * Determine if the user matches the credentials.
+     *
+     * @param  mixed $user
+     * @param  array $credentials
+     * @return bool
+     */
+    protected function hasValidCredentials($user, $credentials)
+    {
+        dd("133");
+        return !is_null($user) && !$user->forbidden && $this->validateCredentials($user, $credentials);
     }
 
     protected function guard()
