@@ -16,7 +16,8 @@ class AdminsTableSeeder extends Seeder
             'name' => 'Administrator',
             'email' => 'admin@ainiok.com',
             'phone' => '13148885200',
-            'password' => '123456'
+            'password' => '123456',
+            'uuid' => uuid()
         ]);
     }
 }

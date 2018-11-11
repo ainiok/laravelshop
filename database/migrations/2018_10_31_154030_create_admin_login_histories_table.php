@@ -15,13 +15,14 @@ class CreateAdminLoginHistoriesTable extends Migration
     {
         Schema::create('admin_login_histories', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('ip',15);
-            $table->string('platform',16)->nullable();
+            $table->string('ip', 15);
+            $table->string('platform', 16)->nullable();
             $table->string('user_name', 255)->nullable();
             $table->integer('admin_id')->unsigned()->nullable();
             $table->foreign('admin_id')->references('id')->on('admins');
             $table->boolean('status')->default(1);
-            $table->string('msg',64)->nullable();
+            $table->string('msg', 64)->nullable();
+            $table->string('uuid', 36);
             $table->timestamps();
         });
     }

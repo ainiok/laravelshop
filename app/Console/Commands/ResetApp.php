@@ -37,10 +37,10 @@ class ResetApp extends Command
      */
     public function handle()
     {
-        $this->execShellWithPrettyPrint('composer dump-autoload');
         $this->execShellWithPrettyPrint('php artisan migrate:fresh --seed');
 //        $this->execShellWithPrettyPrint('php artisan passport:install');
 //        $this->execShellWithPrettyPrint('php artisan storage:link');
+        $this->execShellWithPrettyPrint('composer dump-autoload');
     }
 
     /**

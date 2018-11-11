@@ -17,9 +17,12 @@ class CreateAdminsTable extends Migration
             $table->increments('id');
             $table->string('name');
             $table->string('email')->unique();
-            $table->string("phone")->unique()->nullable();
+            $table->string("phone", 11)->unique()->nullable();
             $table->string('password', 60);
             $table->boolean('forbidden')->default(false);
+            $table->uuid('uuid');
+            $table->string('type', 16)->default('super_admin');
+            $table->timestamp('login_at');
             $table->rememberToken();
             $table->timestamps();
         });

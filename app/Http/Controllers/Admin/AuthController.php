@@ -35,7 +35,7 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-//        $this->clearLoginAttempts($request); //用来清理登陆错误过多
+        $this->clearLoginAttempts($request); //用来清理登陆错误过多
         if (!$request->has('code')) {
             // check login
             $this->validateLogin($request);
