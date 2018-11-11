@@ -10,6 +10,6 @@ class IndexController extends Controller
     //
     public function index(Request $request)
     {
-        echo test();
+        dd(uuid());
     }
 }

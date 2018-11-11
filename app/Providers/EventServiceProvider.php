@@ -16,6 +16,21 @@ class EventServiceProvider extends ServiceProvider
         'App\Events\Event' => [
             'App\Listeners\EventListener',
         ],
+        'App\Events\RegisterEvent' => [
+            'App\Listeners\RegisterListener',
+        ],
+        'App\Events\LoginEvent' => [
+            'App\Listeners\LoginListener',
+        ],
+        'App\Events\LogoutEvent' => [
+            'App\Listeners\LogoutListener',
+        ],
+        'App\Events\LockoutEvent' => [
+            'App\Listeners\LockoutListener',
+        ],
+        "Illuminate\Database\Events\QueryExecuted" => [
+            'App\Listeners\QueryListener'
+        ]
     ];
 
     /**

@@ -66,24 +66,24 @@ class Handler extends ExceptionHandler
                     return $exception->getResponse();
                 case ModelNotFoundException::class;
                     return response()->json([
-                        'success' => false,
+                        'code' => 0,
                         'msg' => trans('app.not_found'),
                         'data' => [],
-                        'total' => null
+                        'count' => null
                     ]);
                 case AuthorizationException::class;
                     return response()->json([
-                        'success' => false,
+                        'code' => 0,
                         'msg' => trans('app.system_unauthorized'),
                         'data' => [],
-                        'total' => null
+                        'count' => null
                     ]);
                 default:
                     return response()->json([
-                        'success' => false,
+                        'code' => 1,
                         'msg' => trans('app.system_fault'),
                         'data' => [],
-                        'total' => null
+                        'count' => null
                     ]);
             }
         } else {

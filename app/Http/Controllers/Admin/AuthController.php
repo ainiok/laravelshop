@@ -6,6 +6,7 @@ use Illuminate\Foundation\Auth\ThrottlesLogins;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Exceptions\LoginException;
 use Validator;
 use App;
 
@@ -34,6 +35,7 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
+//        $this->clearLoginAttempts($request); //用来清理登陆错误过多
         if (!$request->has('code')) {
             // check login
             $this->validateLogin($request);
@@ -54,10 +56,17 @@ class AuthController extends Controller
     {
         // 判断账号是否被禁用
         if ($admin = $this->guard()->getLastAttempted()) {
-            dd($admin->toArray());
+            if ($admin->forbidden) {
+                $msg = trans('login.user_forbidden', ['name' => $request->name]);
+                throw new App\Exceptions\LoginException(parent::response_json(1, $msg));
+            }
         }
-
-
+        $this->incrementLoginAttempts($request);
+        if ($this->hasTooManyLoginAttempts($request)) {
+            $this->fireLockoutEvent($request, 'admin', $this->limiter()->attempts($request));
+            return $this->sendLockoutResponse($request);
+        }
+        return $this->sendFailedLoginResponse($request);
     }
 
     protected function handleUserAuthenticated(Request $request)
@@ -72,9 +81,9 @@ class AuthController extends Controller
 
     protected function validateLogin(Request $request)
     {
-        // 获取错误次数
-        $attempts = $this->limiter()->attempts($request);
-        // 错误次数过多
+        // 密码错误次数
+        $attempts = $this->limiter()->attempts($this->throttleKey($request));
+        // 账号是否被锁
         if ($locked = $this->hasTooManyLoginAttempts($request)) {
             return $this->sendLockoutResponse($request);
         }
@@ -109,6 +118,38 @@ class AuthController extends Controller
     }
 
     /**
+     * Redirect the user after determining they are locked out.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return void
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    protected function sendLockoutResponse(Request $request)
+    {
+        $seconds = $this->limiter()->availableIn(
+            $this->throttleKey($request)
+        );
+        throw new LoginException(parent::response_json(1, '', ['lock_flag' => 1, 'seconds' => $seconds]));
+    }
+
+    /**
+     * Get the failed login response instance.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
+     */
+    protected function sendFailedLoginResponse(Request $request)
+    {
+        $msg = trans('login.wrong_password');
+        $attempts = $this->limiter()->attempts($this->throttleKey($request));
+        $data = ['count' => $attempts, 'captcha_flag' => 0, 'lock_flag' => 0];
+        if ($attempts > config('logincfg.captcha_count')) {
+            $data['captcha_flag'] = 1;
+        }
+        throw new LoginException(parent::response_json(1, $msg, $data));
+    }
+
+    /**
      * Determine if the user matches the credentials.
      *
      * @param  mixed $user
@@ -123,6 +164,17 @@ class AuthController extends Controller
     protected function guard()
     {
         return Auth::guard('admin');
+    }
+
+    /**
+     * Fire an event when a lockout occurs.
+     *
+     * @param  \Illuminate\Http\Request $request
+     * @return void
+     */
+    protected function fireLockoutEvent(Request $request, $user_type, $attempts)
+    {
+        event(new App\Events\LockoutEvent($request, $user_type, $attempts));
     }
 
     /**
