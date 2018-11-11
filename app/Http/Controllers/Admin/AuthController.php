@@ -117,7 +117,6 @@ class AuthController extends Controller
      */
     protected function hasValidCredentials($user, $credentials)
     {
-        dd("133");
         return !is_null($user) && !$user->forbidden && $this->validateCredentials($user, $credentials);
     }
 

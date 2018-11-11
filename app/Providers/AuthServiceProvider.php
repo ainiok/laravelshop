@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Driver\Auth\XxAdminGuard;
 use App\Driver\Auth\XxGuard;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
@@ -23,12 +24,15 @@ class AuthServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
+    public function boot(Gate $gate)
     {
-        $this->registerPolicies();
+        $this->registerPolicies($gate);
         //
         Auth::extend('xxauth', function ($app, $name, array $config) {
             return new XxGuard($app, $name, Auth::createUserProvider($config['provider']), $config);
+        });
+        Auth::extend('xxadminauth', function ($app, $name, array $config) {
+            return new XxAdminGuard($app, $name, Auth::createUserProvider($config['provider']), $config);
         });
     }
 }

@@ -10,6 +10,6 @@ class IndexController extends Controller
     //
     public function index(Request $request)
     {
-        echo "11";
+        echo test();
     }
 }

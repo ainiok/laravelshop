@@ -37,12 +37,12 @@ return [
 
     'guards' => [
         'web' => [
-            'driver' => 'session',
+            'driver' => 'xxauth',
             'provider' => 'users',
         ],
 
         'admin' => [
-            'driver' => 'session',
+            'driver' => 'xxadminauth',
             'provider' => 'admins'
         ],
 
