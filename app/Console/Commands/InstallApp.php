@@ -39,8 +39,8 @@ class InstallApp extends Command
     {
         $this->execShellWithPrettyPrint('composer install -vvv');
         $this->execShellWithPrettyPrint('composer dump-autoload');
-        $this->execShellWithPrettyPrint('php artisan migrate');
         $this->execShellWithPrettyPrint('php artisan key:generate');
+        $this->execShellWithPrettyPrint('php artisan migrate');
         $this->execShellWithPrettyPrint('php artisan migrate --seed');
 //        $this->execShellWithPrettyPrint('php artisan passport:install');
 //        $this->execShellWithPrettyPrint('php artisan storage:link');

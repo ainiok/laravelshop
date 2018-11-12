@@ -12,6 +12,12 @@
 ## install
 
 ```
+ git clone git@github.com:ainiok/laravelshop.git
+ 
+ cp .env.example .env
+```
+配置好数据库后执行
+```
  php artisan app:install  
 ```
 
