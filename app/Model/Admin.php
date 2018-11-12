@@ -27,7 +27,9 @@ class Admin extends Authenticatable
 
     public function setPasswordAttribute($value)
     {
+        \Log::info($value);
         $this->attributes['password'] = bcrypt($value);
+        \Log::info($this->attributes['password']);
     }
 
     public function login_history()

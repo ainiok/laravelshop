@@ -76,6 +76,7 @@ class AuthController extends Controller
         $this->clearLoginAttempts($request);
         $admin = $this->guard()->user();
         \Log::info('管理员:' . $admin->name . '登陆成功!');
+        //登陆成功这里要返回json
         return redirect()->intended($this->redirectTo);
     }
 

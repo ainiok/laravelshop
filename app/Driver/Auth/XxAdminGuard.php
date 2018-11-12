@@ -8,6 +8,7 @@
 
 namespace App\Driver\Auth;
 
+use App\Events\LogoutEvent;
 use Illuminate\Auth\Events\Attempting;
 use Illuminate\Auth\GuardHelpers;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -104,6 +105,7 @@ class XxAdminGuard implements Guard
      */
     public function validate(array $credentials = [])
     {
+        $this->attempt($credentials, false);
     }
 
     /**
@@ -114,7 +116,8 @@ class XxAdminGuard implements Guard
      */
     public function setUser(Authenticatable $user)
     {
-
+        $this->user = $user;
+        return $this;
     }
 
     /**
@@ -212,7 +215,7 @@ class XxAdminGuard implements Guard
         }
 
         if (isset($this->events)) {
-            $this->events->dispatch(new Events\Logout($user));
+            $this->events->dispatch(new LogoutEvent($user));
         }
 
         // Once we have fired the logout event we will clear the users out of memory
