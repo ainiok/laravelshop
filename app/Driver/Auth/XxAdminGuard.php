@@ -9,8 +9,10 @@
 namespace App\Driver\Auth;
 
 use App\Events\LogoutEvent;
+use Illuminate\Auth\Events;
 use Illuminate\Auth\Events\Attempting;
 use Illuminate\Auth\GuardHelpers;
+use Illuminate\Auth\Recaller;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Auth\UserProvider;
@@ -19,8 +21,13 @@ use App\Events\LoginEvent;
 
 class XxAdminGuard implements Guard
 {
-    use GuardHelpers;
 
+    /**
+     * The currently authenticated user.
+     *
+     * @var \Illuminate\Contracts\Auth\Authenticatable
+     */
+    protected $user;
     /**
      * Indicates if the logout method has been called.
      *
@@ -36,11 +43,35 @@ class XxAdminGuard implements Guard
     protected $app;
 
     /**
+     * The name of the Guard. Typically "session".
+     *
+     * Corresponds to driver name in authentication configuration.
+     *
+     * @var string
+     */
+    protected $name;
+
+    /**
+     * The application config info
+     *
+     * @var array
+     */
+    protected $config;
+
+    /**
+     * The session used by the guard.
+     *
+     * @var \Illuminate\Contracts\Session\Session
+     */
+    protected $session;
+    /**
      * The user we last attempted to retrieve.
      *
      * @var \Illuminate\Contracts\Auth\Authenticatabattemptle
      */
     protected $lastAttempted;
+
+    protected $viaRemember = false;
 
     /**
      * The request instance.
@@ -55,6 +86,20 @@ class XxAdminGuard implements Guard
      * @var \Illuminate\Contracts\Events\Dispatcher
      */
     protected $events;
+
+    /**
+     * The user provider implementation.
+     *
+     * @var \Illuminate\Contracts\Auth\UserProvider
+     */
+    protected $provider;
+
+    /**
+     * Indicates if a token user retrieval has been attempted.
+     *
+     * @var bool
+     */
+    protected $recallAttempted = false;
 
     /**
      * Create a new authentication guard.
@@ -73,7 +118,9 @@ class XxAdminGuard implements Guard
         $this->app = $app;
         $this->request = $app['request'];
         $this->provider = $provider;
+        $this->session = $this->app['session.store'];
         $this->events = $app['events'];
+        $this->config = $config;
     }
 
     /**
@@ -86,15 +133,55 @@ class XxAdminGuard implements Guard
         if ($this->loggedOut) {
             return;
         }
-
         if (!is_null($this->user)) {
             return $this->user;
         }
-        $user = null;
-        if ($this->request->hasCookie('token') && $uuid = $this->decode_token($this->request->cookie('token'))) {
-            $user = $this->provider->retrieveByCredentials(compact('uuid'));
+        $id = $this->session->get($this->getName());
+        if (!is_null($id)) {
+            if ($this->user = $this->provider->retrieveById($id)) {
+                $this->fireAuthenticatedEvent($this->user);
+            }
         }
-        return $this->user = $user;
+        $recaller = $this->recaller();
+        if (is_null($this->user) && !is_null($recaller)) {
+            $this->user = $this->userFromRecaller($recaller);
+
+            if ($this->user) {
+                $this->updateSession($this->user->getAuthIdentifier());
+
+                $this->fireLoginEvent($this->user, true);
+            }
+        }
+        return $this->user;
+
+//        $user = null;
+//        if ($this->request->hasCookie('token') && $uuid = $this->decode_token($this->request->cookie('token'))) {
+//            $user = $this->provider->retrieveByCredentials(compact('uuid'));
+//        }
+    }
+
+    /**
+     * Pull a user from the repository by its "remember me" cookie token.
+     *
+     * @param  \Illuminate\Auth\Recaller $recaller
+     * @return mixed
+     */
+    protected function userFromRecaller($recaller)
+    {
+        if (!$recaller->valid() || $this->recallAttempted) {
+            return;
+        }
+
+        // If the user is null, but we decrypt a "recaller" cookie we can attempt to
+        // pull the user data on that cookie which serves as a remember cookie on
+        // the application. Once we have a user we can return it to the caller.
+        $this->recallAttempted = true;
+
+        $this->viaRemember = !is_null($user = $this->provider->retrieveByToken(
+            $recaller->id(), $recaller->token()
+        ));
+
+        return $user;
     }
 
     /**
@@ -117,6 +204,8 @@ class XxAdminGuard implements Guard
     public function setUser(Authenticatable $user)
     {
         $this->user = $user;
+        $this->loggedOut = false;
+        \Log::info("setUser:" . json_encode($this->user));
         return $this;
     }
 
@@ -134,7 +223,7 @@ class XxAdminGuard implements Guard
         $this->lastAttempted = $user = $this->provider->retrieveByCredentials($credentials);
 
         if ($this->hasValidCredentials($user, $credentials)) {
-            $this->login($user);
+            $this->login($user, $remember);
             return true;
         }
         return false;
@@ -161,9 +250,44 @@ class XxAdminGuard implements Guard
      */
     public function login(Authenticatable $user, $remember = false)
     {
+        $this->updateSession($user->getAuthIdentifier());
+
         $this->fireLoginEvent($user, $remember);
 
         $this->setUser($user);
+    }
+
+    /**
+     * Update the session with the given ID.
+     *
+     * @param  string $id
+     * @return void
+     */
+    protected function updateSession($id)
+    {
+        $this->session->put($this->getName(), $id);
+
+        $this->session->migrate(true);
+    }
+
+    /**
+     * Get a unique identifier for the auth session value.
+     *
+     * @return string
+     */
+    public function getName()
+    {
+        return 'login_' . $this->name . '_' . sha1(static::class);
+    }
+
+    /**
+     * Get the name of the cookie used to store the "recaller".
+     *
+     * @return string
+     */
+    public function getRecallerName()
+    {
+        return 'remember_' . $this->name . '_' . sha1(static::class);
     }
 
     /**
@@ -193,6 +317,19 @@ class XxAdminGuard implements Guard
     {
         if (isset($this->events)) {
             $this->events->dispatch(new LoginEvent($user, $this->request->getClientIp(), 'admin'));
+        }
+    }
+
+    /**
+     * Fire the authenticated event if the dispatcher is set.
+     *
+     * @param  \Illuminate\Contracts\Auth\Authenticatable $user
+     * @return void
+     */
+    protected function fireAuthenticatedEvent($user)
+    {
+        if (isset($this->events)) {
+            $this->events->dispatch(new Events\Authenticated($user));
         }
     }
 
@@ -234,5 +371,57 @@ class XxAdminGuard implements Guard
     public function getLastAttempted()
     {
         return $this->lastAttempted;
+    }
+
+    /**
+     * Get the decrypted recaller cookie for the request.
+     *
+     * @return \Illuminate\Auth\Recaller|null
+     */
+    protected function recaller()
+    {
+        if (is_null($this->request)) {
+            return;
+        }
+
+        if ($recaller = $this->request->cookies->get($this->getRecallerName())) {
+            return new Recaller($recaller);
+        }
+    }
+
+    /**
+     * Get the ID for the currently authenticated user.
+     *
+     * @return int|null
+     */
+    public function id()
+    {
+        if ($this->loggedOut) {
+            return;
+        }
+
+        return $this->user()
+            ? $this->user()->getAuthIdentifier()
+            : $this->user->name;
+    }
+
+    /**
+     * Determine if the current user is authenticated.
+     *
+     * @return bool
+     */
+    public function check()
+    {
+        return !is_null($this->user());
+    }
+
+    /**
+     * Determine if the current user is a guest.
+     *
+     * @return bool
+     */
+    public function guest()
+    {
+        return !$this->check();
     }
 }

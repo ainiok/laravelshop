@@ -94,7 +94,9 @@
                 , data: obj.field
                 , done: function (res) {
                     //
-                    console.log(res);
+                    if (res.code === 0) {
+                        window.location.href = res.data.location;
+                    }
                 }
             });
         })
