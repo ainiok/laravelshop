@@ -92,17 +92,11 @@
                     <li data-name="home" class="layui-nav-item layui-nav-itemed">
                         <a href="javascript:;" lay-tips="主页" lay-direction="2">
                             <i class="layui-icon layui-icon-home"></i>
-                            <cite>主页</cite>
+                            <cite>资源总览</cite>
                         </a>
                         <dl class="layui-nav-child">
-                            <dd data-name="console" class="layui-this">
-                                <a lay-href="home/console.html">控制台</a>
-                            </dd>
                             <dd data-name="console">
-                                <a lay-href="home/homepage1.html">主页一</a>
-                            </dd>
-                            <dd data-name="console">
-                                <a lay-href="home/homepage2.html">主页二</a>
+                                <a lay-href="{{route('admin.dashboard')}}">控制台</a>
                             </dd>
                         </dl>
                     </li>
@@ -263,7 +257,7 @@
         <!-- 主体内容 -->
         <div class="layui-body" id="LAY_app_body">
             <div class="layadmin-tabsbody-item layui-show">
-                <iframe src="home/console.html" frameborder="0" class="layadmin-iframe"></iframe>
+                <iframe src="{{route('admin.console')}}" frameborder="0" class="layadmin-iframe"></iframe>
             </div>
         </div>
 

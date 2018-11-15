@@ -12,4 +12,14 @@ class AdminController extends Controller
     {
         return view('admin.index');
     }
+
+    public function dashboard()
+    {
+        return view('admin.dashboard');
+    }
+
+    public function console()
+    {
+        return view('admin.console');
+    }
 }
