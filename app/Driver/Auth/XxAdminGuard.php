@@ -11,7 +11,6 @@ namespace App\Driver\Auth;
 use App\Events\LogoutEvent;
 use Illuminate\Auth\Events;
 use Illuminate\Auth\Events\Attempting;
-use Illuminate\Auth\GuardHelpers;
 use Illuminate\Auth\Recaller;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\Guard;
